@@ -22,7 +22,7 @@ Then go to your target folder, find the generated package file (.scmp), upload i
 
 You can configure your logging settings at `src/main/resources/conf/logback.xml` file.
 
-###Testing
+### Testing
 
 The OpenID Connect authentication process is getting tested using [MockServer](https://www.mock-server.com/). The test server is getting started and stopped automatically by JUnit, while the application is in the testing phase. No external configuration is required.
 
@@ -33,7 +33,7 @@ You can run the tests by using the command:
 
  - **Federated Sign out**. Add the ability for the provider to inform the SCM Manager for possible user logouts or session expiration, so that the scm session terminates too.
  - **Multiple Providers**. Add the ability to have more than one providers configured. (Possibly being used at the same time?).
- - Have the ability to use the **local xml** based users too at the sing in process.
+ - Have the ability to use the **local xml** based users too at the sign in process.
 
 ## License
 This project is licensed under the MIT License. See `LICENSE.txt` for details.
