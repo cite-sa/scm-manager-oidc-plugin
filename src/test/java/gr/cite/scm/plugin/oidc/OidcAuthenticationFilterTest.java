@@ -61,7 +61,7 @@ public class OidcAuthenticationFilterTest {
     @Mock
     private OidcAuthConfig authConfig;
     @Mock
-    private OidcProviderConfig oidcProviderConfig;
+    private OidcProviderConfig providerConfig;
     @Mock
     private ScmConfiguration scmConfig;
     @Mock
@@ -90,8 +90,8 @@ public class OidcAuthenticationFilterTest {
         when(authConfig.getUserIdentifier()).thenReturn("Email");
         when(authenticationHandler.getConfig()).thenReturn(authConfig);
 
-        when(oidcProviderConfig.getTokenEndpoint()).thenReturn("http://localhost:" + mockServerRule.getPort() + "/token");
-        when(oidcProviderConfig.getJwksUri()).thenReturn("http://localhost:" + mockServerRule.getPort() + "/certs");
+        when(providerConfig.getTokenEndpoint()).thenReturn("http://localhost:" + mockServerRule.getPort() + "/token");
+        when(providerConfig.getJwksUri()).thenReturn("http://localhost:" + mockServerRule.getPort() + "/certs");
     }
 
     @Test
@@ -111,6 +111,7 @@ public class OidcAuthenticationFilterTest {
         when(request.getParameter("code")).thenReturn(code);
         when(request.getRequestURI()).thenReturn("/");
         when(request.getContextPath()).thenReturn("/");
+        when(request.getHeader("User-Agent")).thenReturn("Mozilla");
 
         HttpServletResponse response = mock(HttpServletResponse.class);
 

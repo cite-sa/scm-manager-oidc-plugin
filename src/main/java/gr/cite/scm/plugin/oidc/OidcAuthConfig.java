@@ -128,5 +128,18 @@ public class OidcAuthConfig {
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
     }
+
+    @Override
+    public String toString() {
+        return "OidcAuthConfig{" +
+                "providerUrl='" + providerUrl + '\'' +
+                ", userIdentifier='" + userIdentifier + '\'' +
+                ", adminRole='" + adminRole + '\'' +
+                ", clientId='" + clientId + '\'' +
+                ", clientSecret='" + clientSecret + '\'' +
+                ", enabled=" + enabled +
+                ", initialized=" + initialized +
+                '}';
+    }
 }
 

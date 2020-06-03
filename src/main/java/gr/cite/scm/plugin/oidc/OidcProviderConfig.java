@@ -67,7 +67,7 @@ public class OidcProviderConfig {
                 String resStr = EntityUtils.toString(httpClient.execute(get).getEntity());
                 get.releaseConnection();
                 httpClient.close();
-                logger.info("Request to get provider endpoints completed.");
+                logger.debug("Request to get provider endpoints completed.");
                 OidcProviderConfigModel model = OidcAuthUtils.parseJSON(resStr, OidcProviderConfigModel.class);
                 logger.debug("JSON response parsed. Extracted values:");
                 this.authorizationEndpoint = model.getAuthorization_endpoint();

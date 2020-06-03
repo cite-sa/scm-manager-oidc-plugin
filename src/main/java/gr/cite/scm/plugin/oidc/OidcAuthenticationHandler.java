@@ -25,9 +25,12 @@ package gr.cite.scm.plugin.oidc;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.servlet.SessionScoped;
+import org.apache.shiro.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sonia.scm.SCMContextProvider;
+import sonia.scm.config.ScmConfiguration;
 import sonia.scm.plugin.ext.Extension;
 import sonia.scm.store.Store;
 import sonia.scm.store.StoreFactory;
@@ -37,6 +40,7 @@ import sonia.scm.web.security.AuthenticationResult;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 /**
  * Returns the final AuthenticationResult back to AutoLoginModule
@@ -53,11 +57,14 @@ public class OidcAuthenticationHandler implements AuthenticationHandler {
 
     private Store<OidcAuthConfig> store;
 
+    private ScmConfiguration scmConfig;
+
     private static Logger logger = LoggerFactory.getLogger(OidcAuthenticationHandler.class);
 
     @Inject
-    public OidcAuthenticationHandler(StoreFactory storeFactory) {
+    public OidcAuthenticationHandler(StoreFactory storeFactory, ScmConfiguration scmConfig) {
         store = storeFactory.getStore(OidcAuthConfig.class, STORE_NAME);
+        this.scmConfig = scmConfig;
     }
 
     /**
@@ -73,17 +80,21 @@ public class OidcAuthenticationHandler implements AuthenticationHandler {
     public AuthenticationResult authenticate(HttpServletRequest request, HttpServletResponse response, String username, String password) {
         if (config.getEnabled()) {
             if (OidcAuthUtils.isBrowser(request)) {
-                User user = OidcAuthenticationContext.createOidcUser(config, request);
-                if (user != null && user.isValid()) {
-                    logger.info("User " + username + " successfully authenticated by oidc plugin");
-                    AuthenticationResult result = new AuthenticationResult(user);
-                    result.setCacheable(false);
-                    return result;
+                return result(request, username);
+            } else {
+                try {
+                    logger.trace("Request authenticated attribute : {}", request.getAttribute("authenticated"));
+                    if (request.getAttribute("authenticated") == null) {
+                        OidcAuthenticationFilter.doAuthenticate(request, response, SecurityUtils.getSubject(), OidcAuthenticationFilter.oidcProviderConfigStatic, scmConfig, getConfig(), username, password);
+                    }
+                } catch (IOException e) {
+                    return AuthenticationResult.FAILED;
                 }
+                return result(request, username);
             }
         }
-        logger.info("User " + username + " could not get authenticated by oidc plugin");
-        return AuthenticationResult.FAILED;
+        logger.info("User " + username + " did not get authenticated by oidc plugin");
+        return AuthenticationResult.NOT_FOUND;
     }
 
     @Override
@@ -109,6 +120,8 @@ public class OidcAuthenticationHandler implements AuthenticationHandler {
      */
     public void storeConfig() {
         store.set(config);
+        logger.info("Plugin settings got updated.");
+        logger.debug(config.toString());
     }
 
 
@@ -147,5 +160,16 @@ public class OidcAuthenticationHandler implements AuthenticationHandler {
     @Override
     public String getType() {
         return TYPE;
+    }
+
+    private AuthenticationResult result(HttpServletRequest request, String username) {
+        User user = OidcAuthenticationContext.createOidcUser(config, request);
+        if (user != null && user.isValid()) {
+            logger.info("User " + username + " successfully authenticated by oidc plugin");
+            AuthenticationResult result = new AuthenticationResult(user);
+            result.setCacheable(false);
+            return result;
+        }
+        return AuthenticationResult.NOT_FOUND;
     }
 }

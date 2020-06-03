@@ -30,8 +30,16 @@ public class OidcTokenResponseModel {
 
     private String access_token;
 
-    public String getAccess_token() {
+    public String getAccessToken() {
         if (access_token == null) throw new NullPointerException();
+        return access_token;
+    }
+
+    public void setAccessToken(String access_token) {
+        this.access_token = access_token;
+    }
+
+    public String getAccess_token() {
         return access_token;
     }
 

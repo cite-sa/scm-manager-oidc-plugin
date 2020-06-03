@@ -84,7 +84,6 @@ public class OidcAuthUtils {
      */
     public static boolean isBrowser(final HttpServletRequest request) {
         final String userAgent = request.getHeader("User-Agent");
-        logger.debug("User from: " + userAgent);
         if (userAgent != null) {
             return userAgent.startsWith("Mozilla");
         }
@@ -112,17 +111,17 @@ public class OidcAuthUtils {
      */
     public static boolean verifyJWT(DecodedJWT dec_jwt, String provider_url) {
         try {
-            logger.info("Signature verification started...");
+            logger.debug("JWT Signature verification started...");
             JwkProvider provider = new JwkProviderBuilder(new URL(provider_url)).build();
             logger.debug("Loaded Key Provider: key_id -> " + dec_jwt.getKeyId());
             Jwk jwk = provider.get(dec_jwt.getKeyId());
             Algorithm algorithm = Algorithm.RSA256((RSAPublicKey) jwk.getPublicKey(), null);
             Verification verifier = JWT.require(algorithm);
             verifier.build().verify(dec_jwt);
-            logger.info("Signature is valid.");
+            logger.info("JWT Signature is valid.");
             return true;
         } catch (IllegalArgumentException | JWTVerificationException | MalformedURLException | JwkException e) {
-            logger.error("Signature verification failed : " + e.getMessage());
+            logger.error("JWT Signature verification failed : " + e.getMessage());
             return false;
         }
     }
@@ -136,7 +135,7 @@ public class OidcAuthUtils {
     public static DecodedJWT decodeJWT(String token) {
         DecodedJWT jwt = null;
         try {
-            logger.info("Token decoding started...");
+            logger.debug("Token decoding started...");
             jwt = JWT.decode(token);
         } catch (JWTVerificationException e) {
             logger.error("Token decode Failed : " + e.getMessage());
@@ -147,16 +146,16 @@ public class OidcAuthUtils {
     /**
      * Sends a token request to the provider endpoint and returns the result.
      *
-     * @param oidcProviderConfig
+     * @param providerConfig
      * @param authConfig
      * @param scmConfig
      * @param code
      * @return
      * @throws IOException
      */
-    public static String SendTokenRequest(OidcProviderConfig oidcProviderConfig, OidcAuthConfig authConfig, ScmConfiguration scmConfig, String code) throws IOException {
+    public static String sendTokenRequest(OidcProviderConfig providerConfig, OidcAuthConfig authConfig, ScmConfiguration scmConfig, String code) throws IOException {
         CloseableHttpClient httpClient = HttpClients.createDefault();
-        HttpPost post = new HttpPost(oidcProviderConfig.getTokenEndpoint());
+        HttpPost post = new HttpPost(providerConfig.getTokenEndpoint());
         List<NameValuePair> params = new ArrayList<>();
         params.add(new BasicNameValuePair("grant_type", "authorization_code"));
         params.add(new BasicNameValuePair("client_id", authConfig.getClientId()));
@@ -165,6 +164,33 @@ public class OidcAuthUtils {
         params.add(new BasicNameValuePair("code", code));
         post.setEntity(new UrlEncodedFormEntity(params));
         logger.debug("Prepared access token request. Sending...");
+        String resStr = EntityUtils.toString(httpClient.execute(post).getEntity());
+        post.releaseConnection();
+        httpClient.close();
+        return resStr;
+    }
+
+    /**
+     * Sends a token request to the provider endpoint using password credentials and returns the result.
+     *
+     * @param providerConfig
+     * @param authConfig
+     * @param username
+     * @param password
+     * @return
+     * @throws IOException
+     */
+    public static String sendPasswordTokenRequest(OidcProviderConfig providerConfig, OidcAuthConfig authConfig, String username, String password) throws IOException {
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        HttpPost post = new HttpPost(providerConfig.getTokenEndpoint());
+        List<NameValuePair> params = new ArrayList<>();
+        params.add(new BasicNameValuePair("grant_type", "password"));
+        params.add(new BasicNameValuePair("client_id", authConfig.getClientId()));
+        params.add(new BasicNameValuePair("client_secret", authConfig.getClientSecret()));
+        params.add(new BasicNameValuePair("username", username));
+        params.add(new BasicNameValuePair("password", password));
+        post.setEntity(new UrlEncodedFormEntity(params));
+        logger.debug("Prepared password access token request. Sending...");
         String resStr = EntityUtils.toString(httpClient.execute(post).getEntity());
         post.releaseConnection();
         httpClient.close();

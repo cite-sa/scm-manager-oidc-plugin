@@ -37,4 +37,3 @@ You can run the tests by using the command:
 
 ## License
 This project is licensed under the MIT License. See `LICENSE.txt` for details.
-

@@ -49,12 +49,37 @@ public class OidcHttpHandler {
      */
     public static String handleTokenRequest(String code, OidcProviderConfig oidcProviderConfig, OidcAuthConfig authConfig, ScmConfiguration scmConfig) throws IOException {
         logger.debug("Started preparing access token request...");
-        String resStr = OidcAuthUtils.SendTokenRequest(oidcProviderConfig, authConfig, scmConfig, code);
+        String resStr = OidcAuthUtils.sendTokenRequest(oidcProviderConfig, authConfig, scmConfig, code);
         logger.debug("Request completed with JSON response -> *************");
 
         OidcTokenResponseModel model = OidcAuthUtils.parseJSON(resStr, OidcTokenResponseModel.class);
         logger.debug("JSON response parsed. Extracted values:");
-        String access_token = model.getAccess_token();
+        String access_token = model == null ? "" : model.getAccessToken();
+        logger.debug("access_token -> ************");
+        if (access_token.equals("")) {
+            return null;
+        }
+        return access_token;
+    }
+
+    /**
+     * Sends a request to the token endpoint using password credentials and handles the response by returning the access token from the provider.
+     *
+     * @param providerConfig
+     * @param authConfig
+     * @param username
+     * @param password
+     * @return
+     * @throws IOException
+     */
+    public static String handlePasswordTokenRequest(OidcProviderConfig providerConfig, OidcAuthConfig authConfig, String username, String password) throws IOException {
+        logger.debug("Started preparing password access token request...");
+        String resStr = OidcAuthUtils.sendPasswordTokenRequest(providerConfig, authConfig, username, password);
+        logger.debug("Request completed with JSON response -> *************");
+
+        OidcTokenResponseModel model = OidcAuthUtils.parseJSON(resStr, OidcTokenResponseModel.class);
+        logger.debug("JSON response parsed. Extracted values:");
+        String access_token = model == null ? "" : model.getAccessToken();
         logger.debug("access_token -> ************");
         if (access_token.equals("")) {
             return null;
