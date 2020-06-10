@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2020 Communication & Information Technologies Experts SA
+ * Copyright (c) 2020-present Cloudogu GmbH and Contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -34,6 +34,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import com.auth0.jwt.interfaces.Verification;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import gr.cite.scm.plugin.oidc.browser.OidcAuthenticationResource;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
@@ -77,20 +78,6 @@ public class OidcAuthUtils {
     }
 
     /**
-     * Determines if the request originated from a browser.
-     *
-     * @param request
-     * @return
-     */
-    public static boolean isBrowser(final HttpServletRequest request) {
-        final String userAgent = request.getHeader("User-Agent");
-        if (userAgent != null) {
-            return userAgent.startsWith("Mozilla");
-        }
-        return false;
-    }
-
-    /**
      * Returns a mapped object parsed from a json string.
      *
      * @param json
@@ -111,17 +98,17 @@ public class OidcAuthUtils {
      */
     public static boolean verifyJWT(DecodedJWT dec_jwt, String provider_url) {
         try {
-            logger.debug("JWT Signature verification started...");
+            logger.info("Signature verification started...");
             JwkProvider provider = new JwkProviderBuilder(new URL(provider_url)).build();
             logger.debug("Loaded Key Provider: key_id -> " + dec_jwt.getKeyId());
             Jwk jwk = provider.get(dec_jwt.getKeyId());
             Algorithm algorithm = Algorithm.RSA256((RSAPublicKey) jwk.getPublicKey(), null);
             Verification verifier = JWT.require(algorithm);
             verifier.build().verify(dec_jwt);
-            logger.info("JWT Signature is valid.");
+            logger.info("Signature is valid.");
             return true;
         } catch (IllegalArgumentException | JWTVerificationException | MalformedURLException | JwkException e) {
-            logger.error("JWT Signature verification failed : " + e.getMessage());
+            logger.error("Signature verification failed : " + e.getMessage());
             return false;
         }
     }
@@ -135,7 +122,7 @@ public class OidcAuthUtils {
     public static DecodedJWT decodeJWT(String token) {
         DecodedJWT jwt = null;
         try {
-            logger.debug("Token decoding started...");
+            logger.info("Token decoding started...");
             jwt = JWT.decode(token);
         } catch (JWTVerificationException e) {
             logger.error("Token decode Failed : " + e.getMessage());
@@ -146,21 +133,21 @@ public class OidcAuthUtils {
     /**
      * Sends a token request to the provider endpoint and returns the result.
      *
-     * @param providerConfig
+     * @param oidcProviderConfig
      * @param authConfig
      * @param scmConfig
      * @param code
      * @return
      * @throws IOException
      */
-    public static String sendTokenRequest(OidcProviderConfig providerConfig, OidcAuthConfig authConfig, ScmConfiguration scmConfig, String code) throws IOException {
+    public static String SendTokenRequest(OidcProviderConfig oidcProviderConfig, OidcAuthConfig authConfig, ScmConfiguration scmConfig, String code) throws IOException {
         CloseableHttpClient httpClient = HttpClients.createDefault();
-        HttpPost post = new HttpPost(providerConfig.getTokenEndpoint());
+        HttpPost post = new HttpPost(oidcProviderConfig.getTokenEndpoint());
         List<NameValuePair> params = new ArrayList<>();
         params.add(new BasicNameValuePair("grant_type", "authorization_code"));
         params.add(new BasicNameValuePair("client_id", authConfig.getClientId()));
         params.add(new BasicNameValuePair("client_secret", authConfig.getClientSecret()));
-        params.add(new BasicNameValuePair("redirect_uri", scmConfig.getBaseUrl()));
+        params.add(new BasicNameValuePair("redirect_uri", scmConfig.getBaseUrl() + "/api/" + OidcAuthenticationResource.PATH));
         params.add(new BasicNameValuePair("code", code));
         post.setEntity(new UrlEncodedFormEntity(params));
         logger.debug("Prepared access token request. Sending...");

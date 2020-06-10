@@ -21,32 +21,18 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package gr.cite.scm.plugin.oidc.token;
+package gr.cite.scm.plugin.oidc.config;
 
-public class OidcTestToken {
+import com.google.inject.AbstractModule;
+import org.mapstruct.factory.Mappers;
+import sonia.scm.plugin.Extension;
 
-    private String modulus, exponent, keyId, x5c;
+@Extension
+public class OidcAuthConfigModule extends AbstractModule {
 
-    OidcTestToken(String modulus, String exponent, String keyId, String x5c) {
-        this.modulus = modulus;
-        this.exponent = exponent;
-        this.keyId = keyId;
-        this.x5c = x5c;
+    @Override
+    protected void configure() {
+        bind(OidcAuthConfigMapper.class).to(Mappers.getMapper(OidcAuthConfigMapper.class).getClass());
     }
 
-    public String getModulus() {
-        return modulus;
-    }
-
-    public String getExponent() {
-        return exponent;
-    }
-
-    public String getKeyId() {
-        return keyId;
-    }
-
-    public String getX5c() {
-        return x5c;
-    }
 }

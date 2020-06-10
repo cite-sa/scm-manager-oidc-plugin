@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2020 Communication & Information Technologies Experts SA
+ * Copyright (c) 2020-present Cloudogu GmbH and Contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -21,8 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package gr.cite.scm.plugin.oidc;
+package gr.cite.scm.plugin.oidc.utils;
 
+import gr.cite.scm.plugin.oidc.OidcAuthConfig;
+import gr.cite.scm.plugin.oidc.OidcAuthUtils;
+import gr.cite.scm.plugin.oidc.OidcProviderConfig;
 import gr.cite.scm.plugin.oidc.model.OidcTokenResponseModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +52,7 @@ public class OidcHttpHandler {
      */
     public static String handleTokenRequest(String code, OidcProviderConfig oidcProviderConfig, OidcAuthConfig authConfig, ScmConfiguration scmConfig) throws IOException {
         logger.debug("Started preparing access token request...");
-        String resStr = OidcAuthUtils.sendTokenRequest(oidcProviderConfig, authConfig, scmConfig, code);
+        String resStr = OidcAuthUtils.SendTokenRequest(oidcProviderConfig, authConfig, scmConfig, code);
         logger.debug("Request completed with JSON response -> *************");
 
         OidcTokenResponseModel model = OidcAuthUtils.parseJSON(resStr, OidcTokenResponseModel.class);

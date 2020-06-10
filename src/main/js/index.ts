@@ -21,32 +21,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package gr.cite.scm.plugin.oidc.token;
+import { ConfigurationBinder as cfgBinder } from "@scm-manager/ui-components";
+import { binder } from "@scm-manager/ui-extensions";
+import GlobalOidcConfig from "./GlobalOidcConfig";
+import LogoutNavigation from "./OnLogoutAction";
 
-public class OidcTestToken {
+const predicate = (props: object) => {
+  return props.links && props.links.logout;
+};
 
-    private String modulus, exponent, keyId, x5c;
-
-    OidcTestToken(String modulus, String exponent, String keyId, String x5c) {
-        this.modulus = modulus;
-        this.exponent = exponent;
-        this.keyId = keyId;
-        this.x5c = x5c;
-    }
-
-    public String getModulus() {
-        return modulus;
-    }
-
-    public String getExponent() {
-        return exponent;
-    }
-
-    public String getKeyId() {
-        return keyId;
-    }
-
-    public String getX5c() {
-        return x5c;
-    }
-}
+cfgBinder.bindGlobal("/oidc", "scm-oidc-plugin.nav-link", "oidcConfig", GlobalOidcConfig);
+binder.bind("primary-navigation.logout", LogoutNavigation, predicate);

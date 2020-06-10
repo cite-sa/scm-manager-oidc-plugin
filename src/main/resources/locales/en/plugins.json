@@ -1,0 +1,32 @@
+{
+  "scm-oidc-plugin": {
+    "nav-link": "OpenID Connect",
+    "form": {
+      "header": "Global OpenID Connect Configuration",
+      "enabled": "Enabled",
+      "enabledHelp": "If \"Enabled\" SCM-Manager uses OpenID Connect for authentication.",
+      "providerUrl": "Provider URL",
+      "providerUrlHelp": "The URL from the provider that contains the endpoints for authentication (.well-known).",
+      "userIdentifier": "User Identifier",
+      "userIdentifierHelp": "Which user information from the provider is going to be used as a unique identifier by SCM. It can be \"Username\", \"Email\" or \"SubjectID (Default)\".",
+      "adminRole": "Admin Role Name",
+      "adminRoleHelp": "Which client role from the provider user account is going to determine if a user must have admin access to SCM.",
+      "clientId": "Client ID",
+      "clientIdHelp": "The client id from the provider.",
+      "clientSecret": "Client Secret",
+      "clientSecretHelp": "The client secret used from the provider to identify and authorize the client."
+    },
+    "configurationChangedSuccess": "Configuration changed",
+    "LogoutNavigation": "Logout"
+  },
+  "permissions": {
+    "configuration": {
+      "read,write": {
+        "oidc": {
+          "displayName": "Modify OpenID Connect configuration",
+          "description": "May modify the OpenID Connect configuration"
+        }
+      }
+    }
+  }
+}

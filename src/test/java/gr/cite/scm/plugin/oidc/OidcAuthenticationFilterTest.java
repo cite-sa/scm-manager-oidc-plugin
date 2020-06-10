@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2020 Communication & Information Technologies Experts SA
+ * Copyright (c) 2020-present Cloudogu GmbH and Contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -24,13 +24,14 @@
 package gr.cite.scm.plugin.oidc;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import gr.cite.scm.plugin.oidc.browser.OidcAuthenticationResource;
+import gr.cite.scm.plugin.oidc.browser.OidcLoginHandler;
 import gr.cite.scm.plugin.oidc.server.OidcTestServerEndpointResponseBuilder;
 import gr.cite.scm.plugin.oidc.token.OidcTestSubject;
 import gr.cite.scm.plugin.oidc.token.OidcTestToken;
 import gr.cite.scm.plugin.oidc.token.OidcTestTokenBuilder;
+import gr.cite.scm.plugin.oidc.utils.OidcAuthService;
 import org.apache.http.HttpStatus;
-import org.apache.shiro.subject.PrincipalCollection;
-import org.apache.shiro.subject.Subject;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,16 +42,14 @@ import org.mockserver.client.MockServerClient;
 import org.mockserver.junit.MockServerRule;
 import org.mockserver.model.MediaType;
 import sonia.scm.config.ScmConfiguration;
-import sonia.scm.user.User;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.HttpMethod;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.IOException;
 
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.mockserver.model.HttpRequest.request;
@@ -61,14 +60,15 @@ public class OidcAuthenticationFilterTest {
     @Mock
     private OidcAuthConfig authConfig;
     @Mock
-    private OidcProviderConfig providerConfig;
+    private OidcContext context;
+    @Mock
+    private OidcProviderConfig oidcProviderConfig;
+    @Mock
+    private OidcLoginHandler oidcLoginHandler;
     @Mock
     private ScmConfiguration scmConfig;
-    @Mock
-    private OidcAuthenticationHandler authenticationHandler;
-
     @InjectMocks
-    private OidcAuthenticationFilter authenticationFilter;
+    private OidcAuthService authService;
 
     @Rule
     public MockServerRule mockServerRule = new MockServerRule(this);
@@ -78,20 +78,19 @@ public class OidcAuthenticationFilterTest {
     private OidcTestToken testToken = OidcTestTokenBuilder.build(new OidcTestSubject("admin@gmail.com", "admin user", "adminuser", true));
 
     @Before
-    public void init() {
+    public void init() throws IOException {
         MockitoAnnotations.initMocks(this);
 
         when(scmConfig.getBaseUrl()).thenReturn("/");
 
         when(authConfig.getEnabled()).thenReturn(true);
         when(authConfig.getClientId()).thenReturn(OidcAuthUtilsTest.clientId);
-        when(authConfig.getClientSecret()).thenReturn("my-client-secret");
+        when(authConfig.getClientSecret()).thenReturn(OidcAuthUtilsTest.clientSecret);
         when(authConfig.getProviderUrl()).thenReturn("http://localhost:" + mockServerRule.getPort() + "/well-known");
         when(authConfig.getUserIdentifier()).thenReturn("Email");
-        when(authenticationHandler.getConfig()).thenReturn(authConfig);
 
-        when(providerConfig.getTokenEndpoint()).thenReturn("http://localhost:" + mockServerRule.getPort() + "/token");
-        when(providerConfig.getJwksUri()).thenReturn("http://localhost:" + mockServerRule.getPort() + "/certs");
+        when(oidcProviderConfig.getTokenEndpoint()).thenReturn("http://localhost:" + mockServerRule.getPort() + "/token");
+        when(oidcProviderConfig.getJwksUri()).thenReturn("http://localhost:" + mockServerRule.getPort() + "/certs");
     }
 
     @Test
@@ -100,29 +99,20 @@ public class OidcAuthenticationFilterTest {
     }
 
     @Test
-    public void shouldValidateUserFromMockServer() throws JsonProcessingException {
+    public void shouldValidateUserFromMockServer() throws IOException {
         addExpectations();
         String code = "4f8ec13a-56fd-4752-a0f4-37d51b3c2b07.00b72168-553c-4d38-ac4a-b1eda767edcf.ff9fd9da-987d-457d-8c0a-fafca34123ac";
 
         HttpServletRequest request = mock(HttpServletRequest.class);
-        Map<String, String> parameter_map = new HashMap<>();
-        parameter_map.put("code", code);
-        when(request.getParameterMap()).thenReturn(parameter_map);
-        when(request.getParameter("code")).thenReturn(code);
-        when(request.getRequestURI()).thenReturn("/");
-        when(request.getContextPath()).thenReturn("/");
-        when(request.getHeader("User-Agent")).thenReturn("Mozilla");
-
         HttpServletResponse response = mock(HttpServletResponse.class);
 
-        PrincipalCollection principals = mock(PrincipalCollection.class);
-        when(principals.oneByType(User.class)).thenReturn(new User());
+        when(request.getContextPath()).thenReturn("/");
+        when(request.getRequestURI()).thenReturn("/");
+        when(context.get()).thenReturn(authConfig);
 
-        Subject subject = mock(Subject.class);
-        when(subject.isAuthenticated()).thenReturn(false);
-        when(subject.getPrincipals()).thenReturn(principals);
+        OidcAuthenticationResource authenticationResource = new OidcAuthenticationResource(scmConfig, context, oidcProviderConfig, authService, oidcLoginHandler);
 
-        assertNotNull("No User returned : OpenID Authentication process ended unexpectedly...", authenticationFilter.authenticate(request, response, subject));
+        assertTrue("Response not successful : OpenID Authentication process ended unexpectedly...", authenticationResource.login(request, response, code).getStatus() != HttpStatus.SC_UNAUTHORIZED);
     }
 
     private void addExpectations() throws JsonProcessingException {

@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2020 Communication & Information Technologies Experts SA
+ * Copyright (c) 2020-present Cloudogu GmbH and Contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -58,6 +58,7 @@ public class OidcAuthUtilsTest {
     private OidcTestToken simpleTestToken = OidcTestTokenBuilder.build(simpleTestSubject);
 
     public static final String clientId = "my-client";
+    public static final String clientSecret = "my-client-secret";
     public static final String adminClaim = "admin";
 
     @Mock
@@ -77,19 +78,6 @@ public class OidcAuthUtilsTest {
     public void setup() {
         MockitoAnnotations.initMocks(this);
         when(authConfig.getClientId()).thenReturn(clientId);
-    }
-
-    @Test
-    public void shouldNotBeFromBrowser() {
-        when(httpServletRequest.getHeader("User-Agent")).thenReturn(null).thenReturn("Other Agent");
-        assertFalse("failure - should return false", OidcAuthUtils.isBrowser(httpServletRequest));
-        assertFalse("failure - should return false", OidcAuthUtils.isBrowser(httpServletRequest));
-    }
-
-    @Test
-    public void shouldBeFromBrowser() {
-        when(httpServletRequest.getHeader("User-Agent")).thenReturn("Mozilla");
-        assertTrue("failure - should return true", OidcAuthUtils.isBrowser(httpServletRequest));
     }
 
     @Test

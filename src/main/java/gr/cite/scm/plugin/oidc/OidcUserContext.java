@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2020 Communication & Information Technologies Experts SA
+ * Copyright (c) 2020-present Cloudogu GmbH and Contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -23,19 +23,22 @@
  */
 package gr.cite.scm.plugin.oidc;
 
+import gr.cite.scm.plugin.oidc.utils.OidcConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import sonia.scm.user.User;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 /**
  * Authentication Context helper class. Responsible for creating the User objects
  */
-public class OidcAuthenticationContext {
+public class OidcUserContext {
 
-    private static Logger logger = LoggerFactory.getLogger(OidcAuthenticationContext.class);
+    private User user = null;
+    private boolean admin = false;
+
+    private static Logger logger = LoggerFactory.getLogger(OidcUserContext.class);
 
     /**
      * Sets basic information for the user.
@@ -45,13 +48,13 @@ public class OidcAuthenticationContext {
      * @param mail
      * @return
      */
-    public static User createUser(final String identifier, final String displayName, final String mail) {
+    private User createUser(final String identifier, final String displayName, final String mail) {
         User user = new User();
         user.setName(identifier);
         user.setDisplayName(displayName);
         user.setMail(mail);
         user.setPassword(null);
-        user.setType(OidcAuthenticationHandler.getUserType());
+        user.setType(OidcConstants.USER_TYPE);
 
         logger.info("User {} successfully created by Oidc plugin", identifier);
         return user;
@@ -61,14 +64,12 @@ public class OidcAuthenticationContext {
      * Finalises and returns the User object for the login process.
      *
      * @param config
-     * @param request
+     * @param attributes
      * @return
      */
-    public static User createOidcUser(OidcAuthConfig config, final HttpServletRequest request) {
+    public User createOidcUser(OidcAuthConfig config, final Map<String, String> attributes) {
         User user = null;
         try {
-            @SuppressWarnings("unchecked")
-            Map<String, String> attributes = (Map<String, String>) request.getAttribute("user_attributes");
             if (attributes != null) {
                 String username = attributes.get("username");
                 String display_name = attributes.get("display_name");
@@ -85,26 +86,41 @@ public class OidcAuthenticationContext {
                 boolean isSubjectIdDefined = subject_id != null && !subject_id.trim().isEmpty();
 
                 if (usesEmailIdentifier && isEmailDefined && isDisplayNameDefined) {
-                    user = OidcAuthenticationContext.createUser(email, display_name, email);
+                    user = createUser(email, display_name, email);
                 } else if (usesUsernameIdentifier && isUsernameDefined && isDisplayNameDefined && isEmailDefined) {
-                    user = OidcAuthenticationContext.createUser(username, display_name, email);
+                    user = createUser(username, display_name, email);
                 } else if (usesSubjectIdIdentifier && isSubjectIdDefined && isDisplayNameDefined && isEmailDefined) {
-                    user = OidcAuthenticationContext.createUser(subject_id, display_name, email);
+                    user = createUser(subject_id, display_name, email);
                 } else {
                     return null;
                 }
 
                 String role = attributes.get("role");
-                if (role != null && role.contains(config.getAdminRole())) {
-                    user.setAdmin(true);
-                } else {
-                    user.setAdmin(false);
-                }
+                admin = role != null && role.contains(config.getAdminRole());
             }
         } catch (Exception e) {
             logger.error("Error while creating a user : {}", e.getMessage());
         }
+        this.user = user;
         return user;
+    }
+
+    /**
+     * Returns the final user object.
+     *
+     * @return
+     */
+    public User getUser() {
+        return user;
+    }
+
+    /**
+     * Returns true if the user has admin privileges.
+     *
+     * @return
+     */
+    public boolean isAdmin() {
+        return admin;
     }
 
 }

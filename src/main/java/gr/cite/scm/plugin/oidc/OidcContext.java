@@ -21,32 +21,47 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package gr.cite.scm.plugin.oidc.token;
+package gr.cite.scm.plugin.oidc;
 
-public class OidcTestToken {
+import gr.cite.scm.plugin.oidc.utils.OidcConstants;
+import sonia.scm.config.ConfigurationPermissions;
+import sonia.scm.store.ConfigurationStore;
+import sonia.scm.store.ConfigurationStoreFactory;
 
-    private String modulus, exponent, keyId, x5c;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
-    OidcTestToken(String modulus, String exponent, String keyId, String x5c) {
-        this.modulus = modulus;
-        this.exponent = exponent;
-        this.keyId = keyId;
-        this.x5c = x5c;
+@Singleton
+public class OidcContext {
+
+    private ConfigurationStore<OidcAuthConfig> store;
+
+    @Inject
+    public OidcContext(ConfigurationStoreFactory storeFactory) {
+        this.store = storeFactory.withType(OidcAuthConfig.class).withName(OidcConstants.OIDC_CONFIG_STORE_NAME).build();
     }
 
-    public String getModulus() {
-        return modulus;
+    /**
+     * Sets the plugin configuration.
+     *
+     * @param authConfig
+     */
+    public void set(OidcAuthConfig authConfig) {
+        ConfigurationPermissions.write(OidcConstants.OIDC_CONFIG_STORE_NAME).check();
+        store.set(authConfig);
     }
 
-    public String getExponent() {
-        return exponent;
+    /**
+     * Gets the plugin configuration.
+     *
+     * @return
+     */
+    public OidcAuthConfig get() {
+        OidcAuthConfig authConfig = store.get();
+        if (authConfig != null) {
+            return authConfig;
+        }
+        return new OidcAuthConfig().init();
     }
 
-    public String getKeyId() {
-        return keyId;
-    }
-
-    public String getX5c() {
-        return x5c;
-    }
 }

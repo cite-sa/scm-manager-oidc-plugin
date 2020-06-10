@@ -21,32 +21,30 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package gr.cite.scm.plugin.oidc.token;
+package gr.cite.scm.plugin.oidc.config;
 
-public class OidcTestToken {
+import de.otto.edison.hal.HalRepresentation;
+import de.otto.edison.hal.Links;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
-    private String modulus, exponent, keyId, x5c;
+@Getter
+@Setter
+@NoArgsConstructor
+public class OidcAuthConfigDto extends HalRepresentation {
 
-    OidcTestToken(String modulus, String exponent, String keyId, String x5c) {
-        this.modulus = modulus;
-        this.exponent = exponent;
-        this.keyId = keyId;
-        this.x5c = x5c;
+    private String providerUrl;
+    private String userIdentifier;
+    private String adminRole;
+    private String clientId;
+    private String clientSecret;
+    private Boolean enabled;
+
+    @Override
+    @SuppressWarnings("squid:S1185") // We want to have this method available in this package
+    protected HalRepresentation add(Links links) {
+        return super.add(links);
     }
 
-    public String getModulus() {
-        return modulus;
-    }
-
-    public String getExponent() {
-        return exponent;
-    }
-
-    public String getKeyId() {
-        return keyId;
-    }
-
-    public String getX5c() {
-        return x5c;
-    }
 }

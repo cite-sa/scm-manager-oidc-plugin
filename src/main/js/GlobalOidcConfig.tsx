@@ -21,32 +21,25 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package gr.cite.scm.plugin.oidc.token;
+import React from "react";
+import { WithTranslation, withTranslation } from "react-i18next";
+import { Title, Configuration } from "@scm-manager/ui-components";
+import GlobalOidcConfigForm from "./GlobalOidcConfigForm";
 
-public class OidcTestToken {
+type Props = WithTranslation & {
+  link: string;
+};
 
-    private String modulus, exponent, keyId, x5c;
-
-    OidcTestToken(String modulus, String exponent, String keyId, String x5c) {
-        this.modulus = modulus;
-        this.exponent = exponent;
-        this.keyId = keyId;
-        this.x5c = x5c;
-    }
-
-    public String getModulus() {
-        return modulus;
-    }
-
-    public String getExponent() {
-        return exponent;
-    }
-
-    public String getKeyId() {
-        return keyId;
-    }
-
-    public String getX5c() {
-        return x5c;
-    }
+class GlobalOidcConfig extends React.Component<Props> {
+  render() {
+    const { link, t } = this.props;
+    return (
+      <>
+        <Title title={t("scm-oidc-plugin.form.header")} />
+        <Configuration link={link} render={props => <GlobalOidcConfigForm {...props} />} />
+      </>
+    );
+  }
 }
+
+export default withTranslation("plugins")(GlobalOidcConfig);

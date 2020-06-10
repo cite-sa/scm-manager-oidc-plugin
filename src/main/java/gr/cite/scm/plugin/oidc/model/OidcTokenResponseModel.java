@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2020 Communication & Information Technologies Experts SA
+ * Copyright (c) 2020-present Cloudogu GmbH and Contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -30,17 +30,13 @@ public class OidcTokenResponseModel {
 
     private String access_token;
 
-    public String getAccessToken() {
+    public String getAccess_token() {
         if (access_token == null) throw new NullPointerException();
         return access_token;
     }
 
-    public void setAccessToken(String access_token) {
-        this.access_token = access_token;
-    }
-
-    public String getAccess_token() {
-        return access_token;
+    public String getAccessToken() {
+        return getAccess_token();
     }
 
     public void setAccess_token(String access_token) {

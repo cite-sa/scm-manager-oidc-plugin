@@ -1,4 +1,3 @@
-<?xml version="1.0" encoding="UTF-8"?>
 <!--
 
     MIT License
@@ -24,23 +23,21 @@
     SOFTWARE.
 
 -->
-<!DOCTYPE plugin SYSTEM "https://download.scm-manager.org/dtd/plugin/2.0.0-01.dtd">
-<plugin>
+<configuration>
 
-  <scm-version>2</scm-version>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <!-- encoders are assigned the type
+             ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
 
-  <information>
-    <author>CITE S.A</author>
-    <category>Authentication</category>
-    <version>2.0.0</version>
-  </information>
+    <root level="debug">
+        <appender-ref ref="STDOUT" />
+    </root>
 
-  <conditions>
-    <min-version>${project.parent.version}</min-version>
-  </conditions>
 
-  <resources>
-    <script>assets/scm-auth-oidc-plugin.bundle.js</script>
-  </resources>
+    <logger name="gr" level="debug"/>
 
-</plugin>
+</configuration>

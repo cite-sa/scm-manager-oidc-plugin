@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2020 Communication & Information Technologies Experts SA
+ * Copyright (c) 2020-present Cloudogu GmbH and Contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -127,19 +127,6 @@ public class OidcAuthConfig {
 
     public void setEnabled(Boolean enabled) {
         this.enabled = enabled;
-    }
-
-    @Override
-    public String toString() {
-        return "OidcAuthConfig{" +
-                "providerUrl='" + providerUrl + '\'' +
-                ", userIdentifier='" + userIdentifier + '\'' +
-                ", adminRole='" + adminRole + '\'' +
-                ", clientId='" + clientId + '\'' +
-                ", clientSecret='" + clientSecret + '\'' +
-                ", enabled=" + enabled +
-                ", initialized=" + initialized +
-                '}';
     }
 }
 

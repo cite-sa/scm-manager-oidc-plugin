@@ -1,7 +1,7 @@
 /*
  * MIT License
  *
- * Copyright (c) 2020 Communication & Information Technologies Experts SA
+ * Copyright (c) 2020-present Cloudogu GmbH and Contributors
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -45,20 +45,20 @@ public class OidcProviderConfig {
 
     private String authorizationEndpoint, tokenEndpoint, endSessionEndpoint, jwksUri;
 
-    private OidcAuthenticationHandler authenticationHandler;
+    private OidcContext context;
 
     private boolean initialized = false;
 
     @Inject
-    public OidcProviderConfig(OidcAuthenticationHandler authenticationHandler) {
-        this.authenticationHandler = authenticationHandler;
+    public OidcProviderConfig(OidcContext context) {
+        this.context = context;
     }
 
     /**
      * Gets the provider endpoints from the given .well-known uri.
      */
-    public void init() {
-        OidcAuthConfig authConfig = authenticationHandler.getConfig();
+    public OidcProviderConfig init() {
+        OidcAuthConfig authConfig = context.get();
         if (!initialized && authConfig.getEnabled()) {
             try {
                 logger.info("Setting up provider configuration...");
@@ -67,7 +67,7 @@ public class OidcProviderConfig {
                 String resStr = EntityUtils.toString(httpClient.execute(get).getEntity());
                 get.releaseConnection();
                 httpClient.close();
-                logger.debug("Request to get provider endpoints completed.");
+                logger.info("Request to get provider endpoints completed.");
                 OidcProviderConfigModel model = OidcAuthUtils.parseJSON(resStr, OidcProviderConfigModel.class);
                 logger.debug("JSON response parsed. Extracted values:");
                 this.authorizationEndpoint = model.getAuthorization_endpoint();
@@ -83,6 +83,12 @@ public class OidcProviderConfig {
                 logger.error("Error while setting up provider configuration : {}", e.getMessage());
             }
         }
+        return this;
+    }
+
+    public OidcProviderConfig reset() {
+        this.initialized = false;
+        return this;
     }
 
     public String getAuthorizationEndpoint() {

@@ -21,32 +21,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package gr.cite.scm.plugin.oidc.token;
+package gr.cite.scm.plugin.oidc.utils;
 
-public class OidcTestToken {
+public class OidcConstants {
 
-    private String modulus, exponent, keyId, x5c;
+    public static final String OIDC_CONFIG_STORE_NAME = "oidc";
+    public static final String USER_TYPE = "Open Id";
+    public static final String ADMIN_GROUP_NAME = "OIDC_Administrators";
+    public static final String ADMIN_GROUP_DESC = "Administrators from OpenId Connect Authentication. All accounts that have admin claims from the provider, will become members of this group.";
 
-    OidcTestToken(String modulus, String exponent, String keyId, String x5c) {
-        this.modulus = modulus;
-        this.exponent = exponent;
-        this.keyId = keyId;
-        this.x5c = x5c;
-    }
-
-    public String getModulus() {
-        return modulus;
-    }
-
-    public String getExponent() {
-        return exponent;
-    }
-
-    public String getKeyId() {
-        return keyId;
-    }
-
-    public String getX5c() {
-        return x5c;
-    }
 }

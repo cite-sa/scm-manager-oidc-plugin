@@ -21,32 +21,23 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package gr.cite.scm.plugin.oidc.token;
+import React from "react";
+import { withTranslation } from "react-i18next";
+import { NavAction, apiClient } from "@scm-manager/ui-components";
 
-public class OidcTestToken {
+const LogoutAction = ({ t }) => {
+  return (
+    <NavAction
+      label={t("scm-oidc-plugin.LogoutNavigation")}
+      action={onLogoutAction}
+      key="logout"
+    />
+  );
+};
 
-    private String modulus, exponent, keyId, x5c;
-
-    OidcTestToken(String modulus, String exponent, String keyId, String x5c) {
-        this.modulus = modulus;
-        this.exponent = exponent;
-        this.keyId = keyId;
-        this.x5c = x5c;
-    }
-
-    public String getModulus() {
-        return modulus;
-    }
-
-    public String getExponent() {
-        return exponent;
-    }
-
-    public String getKeyId() {
-        return keyId;
-    }
-
-    public String getX5c() {
-        return x5c;
-    }
+function onLogoutAction() {
+	var stream = apiClient.get("/oidc/auth/logout").then(resp => resp);
+	stream.then(res => res.text().then(url => window.location.href = url));
 }
+
+export default withTranslation("plugins")(LogoutAction);

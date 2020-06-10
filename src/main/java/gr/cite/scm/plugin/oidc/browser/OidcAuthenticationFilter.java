@@ -21,32 +21,35 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package gr.cite.scm.plugin.oidc.token;
+package gr.cite.scm.plugin.oidc.browser;
 
-public class OidcTestToken {
+import sonia.scm.Priority;
+import sonia.scm.config.ScmConfiguration;
+import sonia.scm.filter.Filters;
+import sonia.scm.filter.WebElement;
+import sonia.scm.web.WebTokenGenerator;
+import sonia.scm.web.filter.AuthenticationFilter;
 
-    private String modulus, exponent, keyId, x5c;
+import javax.inject.Inject;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
+import java.util.Set;
 
-    OidcTestToken(String modulus, String exponent, String keyId, String x5c) {
-        this.modulus = modulus;
-        this.exponent = exponent;
-        this.keyId = keyId;
-        this.x5c = x5c;
+@WebElement("/*")
+@Priority(Filters.PRIORITY_AUTHENTICATION)
+public class OidcAuthenticationFilter extends AuthenticationFilter {
+
+    @Inject
+    public OidcAuthenticationFilter(ScmConfiguration scmConfiguration, Set<WebTokenGenerator> tokenGenerators) {
+        super(scmConfiguration, tokenGenerators);
     }
 
-    public String getModulus() {
-        return modulus;
+    @Override
+    protected void handleUnauthorized(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
+        chain.doFilter(request, response);
     }
 
-    public String getExponent() {
-        return exponent;
-    }
-
-    public String getKeyId() {
-        return keyId;
-    }
-
-    public String getX5c() {
-        return x5c;
-    }
 }
