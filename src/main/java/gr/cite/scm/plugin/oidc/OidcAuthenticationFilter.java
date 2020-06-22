@@ -26,6 +26,8 @@ package gr.cite.scm.plugin.oidc;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import gr.cite.scm.plugin.oidc.model.OidcTokenResponseModel;
+import gr.cite.scm.plugin.oidc.token.OidcClientTokenIssuer;
 import org.apache.shiro.authc.AuthenticationException;
 import org.apache.shiro.authc.AuthenticationToken;
 import org.apache.shiro.authc.UsernamePasswordToken;
@@ -57,13 +59,16 @@ public class OidcAuthenticationFilter implements AutoLoginModule {
 
     private final OidcAuthenticationHandler authenticationHandler;
 
+    private OidcClientTokenIssuer clientTokenIssuer;
+
     private final OidcProviderConfig providerConfig;
     public static OidcProviderConfig oidcProviderConfigStatic;
 
     @Inject
-    public OidcAuthenticationFilter(ScmConfiguration scmConfig, OidcAuthenticationHandler authenticationHandler, OidcProviderConfig providerConfig) {
+    public OidcAuthenticationFilter(ScmConfiguration scmConfig, OidcAuthenticationHandler authenticationHandler, OidcClientTokenIssuer clientTokenIssuer, OidcProviderConfig providerConfig) {
         this.scmConfig = scmConfig;
         this.authenticationHandler = authenticationHandler;
+        this.clientTokenIssuer = clientTokenIssuer;
         this.providerConfig = providerConfig;
         this.providerConfig.init();
         OidcAuthenticationFilter.oidcProviderConfigStatic = this.providerConfig;
@@ -93,7 +98,7 @@ public class OidcAuthenticationFilter implements AutoLoginModule {
                     sendRedirect(httpServletRequest, httpServletResponse, getProviderCodeRequestString());
                 } else if (OidcAuthUtils.isBrowser(httpServletRequest) && httpServletRequest.getParameterMap().containsKey("code")) {
                     logger.info("Handling request from browser...");
-                    user = doAuthenticate(httpServletRequest, httpServletResponse, subject, providerConfig, scmConfig, authConfig, null, null);
+                    user = doAuthenticate(httpServletRequest, httpServletResponse, subject, providerConfig, scmConfig, authConfig, clientTokenIssuer, null, null);
                 } else {
                     logger.info("Handling request from client...");
                 }
@@ -114,18 +119,20 @@ public class OidcAuthenticationFilter implements AutoLoginModule {
      * @return
      * @throws IOException
      */
-    public static User doAuthenticate(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Subject subject, OidcProviderConfig providerConfig, ScmConfiguration scmConfig, OidcAuthConfig authConfig, String username, String password) throws IOException {
+    public static User doAuthenticate(HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Subject subject, OidcProviderConfig providerConfig, ScmConfiguration scmConfig, OidcAuthConfig authConfig, OidcClientTokenIssuer clientTokenIssuer, String username, String password) throws IOException {
         String access_token = null;
+        OidcTokenResponseModel tokenResponse;
         logger.info("Starting Open ID Authentication process...");
         if (httpServletRequest.getParameterMap().containsKey("code")) {
             String code = httpServletRequest.getParameter("code").trim();
             logger.info("Redirected back to root with code -> ************");
 
-            access_token = OidcHttpHandler.handleTokenRequest(code, providerConfig, authConfig, scmConfig);
+            tokenResponse = OidcHttpHandler.handleTokenRequest(code, providerConfig, authConfig, scmConfig);
         } else {
             logger.debug("Login Username: {}", username);
-            access_token = OidcHttpHandler.handlePasswordTokenRequest(providerConfig, authConfig, username, password);
+            tokenResponse = OidcHttpHandler.handlePasswordTokenRequest(providerConfig, authConfig, username, password);
         }
+        access_token = tokenResponse.getAccessToken();
 
         if (access_token == null) {
             logger.info("No access_token received... Authentication process failed.");
@@ -142,7 +149,7 @@ public class OidcAuthenticationFilter implements AutoLoginModule {
 
         if (OidcAuthUtils.verifyJWT(jwt, providerConfig.getJwksUri())) {
             httpServletRequest.setAttribute("authenticated", "true");
-            return completeAuthenticationProcess(authConfig, user_attributes, httpServletRequest, httpServletResponse, subject, !httpServletRequest.getParameterMap().containsKey("code"));
+            return completeAuthenticationProcess(authConfig, user_attributes, httpServletRequest, httpServletResponse, subject, clientTokenIssuer, tokenResponse, !httpServletRequest.getParameterMap().containsKey("code"));
         } else {
             logger.info("JWT is not valid... Authentication process failed.");
             sendRedirect(httpServletRequest, httpServletResponse, httpServletRequest.getContextPath());
@@ -160,17 +167,22 @@ public class OidcAuthenticationFilter implements AutoLoginModule {
      * @param subject
      * @return
      */
-    public static User completeAuthenticationProcess(OidcAuthConfig authConfig, Map<String, String> user_attributes, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Subject subject, boolean client) {
+    public static User completeAuthenticationProcess(OidcAuthConfig authConfig, Map<String, String> user_attributes, HttpServletRequest httpServletRequest, HttpServletResponse httpServletResponse, Subject subject, OidcClientTokenIssuer clientTokenIssuer, OidcTokenResponseModel tokenResponse, boolean client) {
         User user;
         httpServletRequest.setAttribute("user_attributes", user_attributes);
-        if (authConfig.getUserIdentifier().equals("Email")) {
-            user = getLoginUser(subject, httpServletRequest.getRemoteAddr(), user_attributes.get("email"), authConfig);
-        } else if (authConfig.getUserIdentifier().equals("Username")) {
-            user = getLoginUser(subject, httpServletRequest.getRemoteAddr(), user_attributes.get("username"), authConfig);
+        String username;
+        if (authConfig.getUserIdentifier().equals(OidcAuthConfig.UserIdentifier.EMAIL)) {
+            username = user_attributes.get("email");
+        } else if (authConfig.getUserIdentifier().equals(OidcAuthConfig.UserIdentifier.USERNAME)) {
+            username = user_attributes.get("username");
         } else {
-            user = getLoginUser(subject, httpServletRequest.getRemoteAddr(), user_attributes.get("sub"), authConfig);
+            username = user_attributes.get("sub");
         }
+        user = getLoginUser(subject, httpServletRequest.getRemoteAddr(), username, authConfig);
         if (user != null && httpServletRequest.getQueryString() != null && !client) {
+            if (OidcAuthConfig.AuthenticationFlow.IDENTIFICATION_TOKEN.equals(authConfig.getAuthenticationFlow())) {
+                clientTokenIssuer.saveProviderTokens(tokenResponse.getAccessToken(), tokenResponse.getRefreshToken(), username);
+            }
             logger.info("Redirecting after successful validation.");
             sendRedirect(httpServletRequest, httpServletResponse, httpServletRequest.getContextPath());
         }

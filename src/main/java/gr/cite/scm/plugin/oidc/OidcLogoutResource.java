@@ -24,6 +24,7 @@
 package gr.cite.scm.plugin.oidc;
 
 import com.google.inject.Inject;
+import gr.cite.scm.plugin.oidc.token.OidcClientTokenIssuer;
 import org.apache.shiro.SecurityUtils;
 import org.apache.shiro.subject.Subject;
 import org.slf4j.Logger;
@@ -51,11 +52,14 @@ public class OidcLogoutResource {
 
     private final OidcAuthenticationHandler authenticationHandler;
 
+    private OidcClientTokenIssuer clientTokenIssuer;
+
     @Inject
-    public OidcLogoutResource(ScmConfiguration scmConfig, OidcProviderConfig oidcProviderConfig, OidcAuthenticationHandler authenticationHandler) {
+    public OidcLogoutResource(ScmConfiguration scmConfig, OidcProviderConfig oidcProviderConfig, OidcAuthenticationHandler authenticationHandler, OidcClientTokenIssuer clientTokenIssuer) {
         this.scmConfig = scmConfig;
         this.oidcProviderConfig = oidcProviderConfig;
         this.authenticationHandler = authenticationHandler;
+        this.clientTokenIssuer = clientTokenIssuer;
         this.oidcProviderConfig.init();
     }
 
@@ -71,6 +75,7 @@ public class OidcLogoutResource {
         OidcAuthConfig oidcAuthConfig = authenticationHandler.getConfig();
         logger.debug("Destroy local session and return base url");
         Subject subject = SecurityUtils.getSubject();
+        clientTokenIssuer.removeProviderTokens(subject.getPrincipals().getPrimaryPrincipal().toString());
         subject.logout();
         if (oidcAuthConfig.getEnabled()) {
             return oidcProviderConfig.getEndSessionEndpoint() + "?redirect_uri=" + scmConfig.getBaseUrl();

@@ -23,11 +23,12 @@
  */
 package gr.cite.scm.plugin.oidc;
 
-import gr.cite.scm.plugin.oidc.token.OidcTestSubject;
+import gr.cite.scm.plugin.oidc.helpers.jwt.OidcTestSubject;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import sonia.scm.user.User;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -54,25 +55,33 @@ public class OidcAuthenticationContextTest {
 
     @Test
     public void shouldReturnUser() {
-        when(authConfig.getUserIdentifier()).thenReturn("SubjectID");
+        when(authConfig.getUserIdentifier()).thenReturn(OidcAuthConfig.UserIdentifier.SUBJECT_ID);
 
         when(request.getAttribute("user_attributes")).thenReturn(generateUserAttributesMap(false));
-        assertEquals(demoUser.getName(), OidcAuthenticationContext.createOidcUser(authConfig, request).getDisplayName());
-        assertEquals(demoUser.getSub(), OidcAuthenticationContext.createOidcUser(authConfig, request).getName());
-        assertEquals(demoUser.getEmail(), OidcAuthenticationContext.createOidcUser(authConfig, request).getMail());
-        assertFalse("Failure - User should not be admin", OidcAuthenticationContext.createOidcUser(authConfig, request).isAdmin());
+
+        User user = OidcAuthenticationContext.createOidcUser(authConfig, request);
+
+        assertNotNull(user);
+        assertEquals(demoUser.getName(), user.getDisplayName());
+        assertEquals(demoUser.getSub(), user.getName());
+        assertEquals(demoUser.getEmail(), user.getMail());
+        assertFalse("Failure - User should not be admin", user.isAdmin());
     }
 
     @Test
     public void shouldReturnAdminUser() {
-        when(authConfig.getUserIdentifier()).thenReturn("Email");
+        when(authConfig.getUserIdentifier()).thenReturn(OidcAuthConfig.UserIdentifier.EMAIL);
         when(authConfig.getAdminRole()).thenReturn("admin");
 
         when(request.getAttribute("user_attributes")).thenReturn(generateUserAttributesMap(true));
-        assertEquals(demoAdminUser.getName(), OidcAuthenticationContext.createOidcUser(authConfig, request).getDisplayName());
-        assertEquals(demoAdminUser.getEmail(), OidcAuthenticationContext.createOidcUser(authConfig, request).getName());
-        assertEquals(demoAdminUser.getEmail(), OidcAuthenticationContext.createOidcUser(authConfig, request).getMail());
-        assertTrue("Failure - User should be admin", OidcAuthenticationContext.createOidcUser(authConfig, request).isAdmin());
+
+        User user = OidcAuthenticationContext.createOidcUser(authConfig, request);
+
+        assertNotNull(user);
+        assertEquals(demoAdminUser.getName(), user.getDisplayName());
+        assertEquals(demoAdminUser.getEmail(), user.getName());
+        assertEquals(demoAdminUser.getEmail(), user.getMail());
+        assertTrue("Failure - User should be admin", user.isAdmin());
     }
 
     private Map<String, String> generateUserAttributesMap(boolean admin){

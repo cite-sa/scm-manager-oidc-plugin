@@ -25,10 +25,10 @@ package gr.cite.scm.plugin.oidc;
 
 import com.auth0.jwt.interfaces.DecodedJWT;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import gr.cite.scm.plugin.oidc.server.OidcTestServerEndpointResponseBuilder;
-import gr.cite.scm.plugin.oidc.token.OidcTestSubject;
-import gr.cite.scm.plugin.oidc.token.OidcTestToken;
-import gr.cite.scm.plugin.oidc.token.OidcTestTokenBuilder;
+import gr.cite.scm.plugin.oidc.helpers.server.OidcTestServerEndpointResponseBuilder;
+import gr.cite.scm.plugin.oidc.helpers.jwt.OidcTestSubject;
+import gr.cite.scm.plugin.oidc.helpers.jwt.OidcTestToken;
+import gr.cite.scm.plugin.oidc.helpers.jwt.OidcTestTokenBuilder;
 import org.apache.http.HttpStatus;
 import org.junit.Before;
 import org.junit.Rule;

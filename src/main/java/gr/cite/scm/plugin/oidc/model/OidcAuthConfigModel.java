@@ -25,7 +25,7 @@ package gr.cite.scm.plugin.oidc.model;
 
 public class OidcAuthConfigModel {
 
-    private String providerUrl, userIdentifier, adminRole, clientId, clientSecret;
+    private String providerUrl, userIdentifier, adminRole, clientId, clientSecret, authenticationFlow;
     private Boolean enabled;
 
     public void setProviderUrl(String providerUrl) {
@@ -46,6 +46,10 @@ public class OidcAuthConfigModel {
 
     public void setClientSecret(String clientSecret) {
         this.clientSecret = clientSecret;
+    }
+
+    public void setAuthenticationFlow(String authenticationFlow) {
+        this.authenticationFlow = authenticationFlow;
     }
 
     public void setEnabled(Boolean enabled) {
@@ -75,6 +79,10 @@ public class OidcAuthConfigModel {
     public String getClientSecret() {
         if (clientSecret == null) throw new NullPointerException();
         return clientSecret;
+    }
+
+    public String getAuthenticationFlow() {
+        return authenticationFlow;
     }
 
     public Boolean getEnabled() {

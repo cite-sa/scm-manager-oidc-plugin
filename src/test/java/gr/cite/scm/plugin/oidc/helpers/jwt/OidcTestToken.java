@@ -21,41 +21,32 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package gr.cite.scm.plugin.oidc.token;
+package gr.cite.scm.plugin.oidc.helpers.jwt;
 
-import java.util.UUID;
+public class OidcTestToken {
 
-public class OidcTestSubject {
+    private String modulus, exponent, keyId, x5c;
 
-    private String sub, email, name, preferredUsername;
-
-    private boolean admin;
-
-    public OidcTestSubject(String email, String name, String preferredUsername, boolean admin) {
-        this.admin = admin;
-        this.sub = UUID.randomUUID().toString();
-        this.email = email;
-        this.name = name;
-        this.preferredUsername = preferredUsername;
+    OidcTestToken(String modulus, String exponent, String keyId, String x5c) {
+        this.modulus = modulus;
+        this.exponent = exponent;
+        this.keyId = keyId;
+        this.x5c = x5c;
     }
 
-    public String getSub() {
-        return sub;
+    public String getModulus() {
+        return modulus;
     }
 
-    public String getEmail() {
-        return email;
+    public String getExponent() {
+        return exponent;
     }
 
-    public String getName() {
-        return name;
+    public String getKeyId() {
+        return keyId;
     }
 
-    public String getPreferredUsername() {
-        return preferredUsername;
-    }
-
-    public boolean isAdmin() {
-        return admin;
+    public String getX5c() {
+        return x5c;
     }
 }

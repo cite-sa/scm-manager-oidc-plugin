@@ -12,7 +12,7 @@
   <groupId>gr.cite.scm.plugin.oidc</groupId>
   <artifactId>scm-auth-oidc-plugin</artifactId>
   <packaging>jar</packaging>
-  <version>1.1.0</version>
+  <version>1.2.0</version>
   <name>${project.artifactId}</name>
   <description>BSD Licensed SCM-Manager plugin for Open ID Connect authentication</description>
 

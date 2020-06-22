@@ -21,11 +21,13 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package gr.cite.scm.plugin.oidc.token;
+package gr.cite.scm.plugin.oidc.helpers.jwt;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.algorithms.Algorithm;
 import gr.cite.scm.plugin.oidc.OidcAuthUtilsTest;
+import gr.cite.scm.plugin.oidc.helpers.jwt.OidcTestSubject;
+import gr.cite.scm.plugin.oidc.helpers.jwt.OidcTestToken;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;

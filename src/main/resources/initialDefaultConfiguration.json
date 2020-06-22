@@ -1,8 +1,9 @@
 {
   "providerUrl": "http://localhost:8080/auth/realms/myrealm/.well-known/openid-configuration",
-  "userIdentifier": "SubjectID",
+  "userIdentifier": "SubjectId",
   "adminRole": "admin",
   "clientId": "my-client",
   "clientSecret": "db8f07e5-a3bf-4d11-af5b-5c86b5d2b7c0",
+  "authenticationFlow": "Resource Owner Grant Flow",
   "enabled": false
 }

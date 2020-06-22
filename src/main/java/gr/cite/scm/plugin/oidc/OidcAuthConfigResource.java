@@ -70,6 +70,9 @@ public class OidcAuthConfigResource {
     @Consumes({MediaType.APPLICATION_XML, MediaType.APPLICATION_JSON})
     public Response setConfig(@Context UriInfo uriInfo, OidcAuthConfig config) {
         if (configIsValid(config)) {
+            if (config.getEnabled() == null) {
+                config.setEnabled(false);
+            }
             authenticationHandler.setConfig(config);
             authenticationHandler.storeConfig();
             return Response.created(uriInfo.getRequestUri()).build();
@@ -86,12 +89,19 @@ public class OidcAuthConfigResource {
      */
     private static boolean configIsValid(OidcAuthConfig config) {
         return (config.getUserIdentifier() != null &&
-                Arrays.asList(new String[]{"Username", "Email", "SubjectID"}).contains(config.getUserIdentifier()) &&
+                Arrays.asList(new String[]{
+                        OidcAuthConfig.UserIdentifier.SUBJECT_ID,
+                        OidcAuthConfig.UserIdentifier.USERNAME,
+                        OidcAuthConfig.UserIdentifier.EMAIL}).contains(config.getUserIdentifier()) &&
                 config.getClientId() != null && config.getClientId().trim().length() > 0 &&
                 config.getClientSecret() != null && config.getClientSecret().trim().length() > 0 &&
                 config.getAdminRole() != null && config.getAdminRole().trim().length() > 0 &&
                 config.getProviderUrl() != null && config.getProviderUrl().trim().length() > 0 &&
-                config.getEnabled() != null);
+                config.getAuthenticationFlow() != null &&
+                Arrays.asList(new String[]{
+                        OidcAuthConfig.AuthenticationFlow.RESOURCE_OWNER,
+                        OidcAuthConfig.AuthenticationFlow.IDENTIFICATION_TOKEN}).contains(config.getAuthenticationFlow())
+        );
     }
 
     private OidcAuthenticationHandler authenticationHandler;

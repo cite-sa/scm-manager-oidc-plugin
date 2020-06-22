@@ -4,11 +4,16 @@ For testing and integration purposes, we have validated the setup using the Keyc
 ## Configuration
 Once installed from the plugins manager panel, you can configure it to use your provider of choice by giving the following information (You can find the configuration form at config -> General, at the menu on the left side of the screen).
 
- - **Provider URL** : The URL from the provider that contains the endpoints for authentication (.well-known).
- - **Client ID** : The client id from the provider.
- - **Client Secret** : The client secret used from the provider to identify and authorize the client.
- - **User Identifier** : Which user information from the provider is going to be used as a unique identifier by SCM. It can be "*Username*", "*Email*" or "*SubjectID* (Default)".
- - **Admin Role Name** : Which client role from the provider user account is going to determine if a user must have admin access to SCM. <b>[IMPORTANT]</b> It will override the scm admin setting.
+ - **Provider URL**: The URL from the provider that contains the endpoints for authentication (.well-known).
+ - **Client ID**: The client id from the provider.
+ - **Client Secret**: The client secret used from the provider to identify and authorize the client.
+ - **User Identifier**: Which user information from the provider is going to be used as a unique identifier by SCM Manager. It can be "*Username*", "*Email*" or "*SubjectID* (Default)".
+ - **Admin Role Name**: Which client role from the provider user account is going to determine if a user must have admin access to SCM Manager. <b>[IMPORTANT]</b> It will override the local admin setting.
+ - **Client Authentication Flow**: There are two options here: 
+     1) **Resource Owner Grant Flow**: Allows the users to connect with clients using their account credentials if it is managed directly from the provider.
+     2) **Client Identification Token Flow***: Allows connections from accounts not directly managed from the provider, using identification tokens. The users should use their SCM Manager username and one of their issued tokens as a password to connect. This affects all the accounts regardless of their origin.
+ 
+ \* If you want as less sensitive user information as possible stored and managed by your SCM Manager server, avoid using this setting.
 ## Deployment
 This plugin has been tested working with **Keycloak v9.0.2** OpenID Connect Provider and is targeting version **1.60** of **SCM Manager** (https://www.scm-manager.org/).
 

@@ -24,10 +24,10 @@
 package gr.cite.scm.plugin.oidc;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import gr.cite.scm.plugin.oidc.server.OidcTestServerEndpointResponseBuilder;
-import gr.cite.scm.plugin.oidc.token.OidcTestSubject;
-import gr.cite.scm.plugin.oidc.token.OidcTestToken;
-import gr.cite.scm.plugin.oidc.token.OidcTestTokenBuilder;
+import gr.cite.scm.plugin.oidc.helpers.server.OidcTestServerEndpointResponseBuilder;
+import gr.cite.scm.plugin.oidc.helpers.jwt.OidcTestSubject;
+import gr.cite.scm.plugin.oidc.helpers.jwt.OidcTestToken;
+import gr.cite.scm.plugin.oidc.helpers.jwt.OidcTestTokenBuilder;
 import org.apache.http.HttpStatus;
 import org.apache.shiro.subject.PrincipalCollection;
 import org.apache.shiro.subject.Subject;
@@ -87,7 +87,7 @@ public class OidcAuthenticationFilterTest {
         when(authConfig.getClientId()).thenReturn(OidcAuthUtilsTest.clientId);
         when(authConfig.getClientSecret()).thenReturn("my-client-secret");
         when(authConfig.getProviderUrl()).thenReturn("http://localhost:" + mockServerRule.getPort() + "/well-known");
-        when(authConfig.getUserIdentifier()).thenReturn("Email");
+        when(authConfig.getUserIdentifier()).thenReturn(OidcAuthConfig.UserIdentifier.EMAIL);
         when(authenticationHandler.getConfig()).thenReturn(authConfig);
 
         when(providerConfig.getTokenEndpoint()).thenReturn("http://localhost:" + mockServerRule.getPort() + "/token");

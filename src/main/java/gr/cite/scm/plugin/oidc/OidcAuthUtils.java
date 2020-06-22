@@ -46,9 +46,11 @@ import org.slf4j.LoggerFactory;
 import sonia.scm.config.ScmConfiguration;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.security.SecureRandom;
 import java.security.interfaces.RSAPublicKey;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -113,7 +115,7 @@ public class OidcAuthUtils {
         try {
             logger.debug("JWT Signature verification started...");
             JwkProvider provider = new JwkProviderBuilder(new URL(provider_url)).build();
-            logger.debug("Loaded Key Provider: key_id -> " + dec_jwt.getKeyId());
+            logger.debug("Loaded Key Provider: key_id -> *************");
             Jwk jwk = provider.get(dec_jwt.getKeyId());
             Algorithm algorithm = Algorithm.RSA256((RSAPublicKey) jwk.getPublicKey(), null);
             Verification verifier = JWT.require(algorithm);
@@ -198,6 +200,31 @@ public class OidcAuthUtils {
     }
 
     /**
+     * Sends a token request to the provider endpoint using a refresh_token and returns the result.
+     *
+     * @param providerConfig
+     * @param authConfig
+     * @param refresh_token
+     * @return
+     * @throws IOException
+     */
+    public static String sendRefreshTokenRequest(OidcProviderConfig providerConfig, OidcAuthConfig authConfig, String refresh_token) throws IOException {
+        CloseableHttpClient httpClient = HttpClients.createDefault();
+        HttpPost post = new HttpPost(providerConfig.getTokenEndpoint());
+        List<NameValuePair> params = new ArrayList<>();
+        params.add(new BasicNameValuePair("grant_type", "refresh_token"));
+        params.add(new BasicNameValuePair("client_id", authConfig.getClientId()));
+        params.add(new BasicNameValuePair("client_secret", authConfig.getClientSecret()));
+        params.add(new BasicNameValuePair("refresh_token", refresh_token));
+        post.setEntity(new UrlEncodedFormEntity(params));
+        logger.debug("Prepared refresh token request. Sending...");
+        String resStr = EntityUtils.toString(httpClient.execute(post).getEntity());
+        post.releaseConnection();
+        httpClient.close();
+        return resStr;
+    }
+
+    /**
      * Prepares a map with user attributes from the provider token
      *
      * @param authConfig
@@ -205,7 +232,7 @@ public class OidcAuthUtils {
      * @return
      */
     public static Map<String, String> getUserAttributesFromToken(OidcAuthConfig authConfig, DecodedJWT jwt) {
-        logger.debug("Access Token Decoded. Extracting claims...");
+        logger.debug("Token Decoded. Extracting claims...");
         for (String key : jwt.getClaims().keySet()) {
             logger.trace(key + " -> " + jwt.getClaims().get(key).asString());
         }
@@ -224,6 +251,17 @@ public class OidcAuthUtils {
         } catch (NullPointerException ignored) {
         }
         return user_attributes;
+    }
+
+    public static class Security {
+
+        public static String generateSecureRandom(int length) {
+            SecureRandom sr = new SecureRandom();
+            byte[] bytes = new byte[length];
+            sr.nextBytes(bytes);
+            return DatatypeConverter.printHexBinary(bytes).toLowerCase();
+        }
+
     }
 
 }

@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import javax.xml.bind.annotation.*;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 
 /**
  * Plugin configuration class
@@ -36,6 +37,17 @@ import java.io.InputStream;
 @XmlRootElement(name = "oidc-auth-config")
 @XmlAccessorType(XmlAccessType.FIELD)
 public class OidcAuthConfig {
+
+    public static class AuthenticationFlow {
+        public static final String RESOURCE_OWNER = "Resource Owner Grant Flow";
+        public static final String IDENTIFICATION_TOKEN = "Client Identification Token Flow";
+    }
+
+    public static class UserIdentifier {
+        public static final String SUBJECT_ID = "SubjectId";
+        public static final String USERNAME = "Username";
+        public static final String EMAIL = "Email";
+    }
 
     @XmlElement(name = "provider-url")
     private String providerUrl;
@@ -51,6 +63,9 @@ public class OidcAuthConfig {
 
     @XmlElement(name = "client-secret")
     private String clientSecret;
+
+    @XmlElement(name = "authentication-flow")
+    private String authenticationFlow;
 
     @XmlElement(name = "enabled")
     private Boolean enabled;
@@ -73,6 +88,7 @@ public class OidcAuthConfig {
                 if (this.providerUrl == null) this.providerUrl = model.getProviderUrl();
                 if (this.adminRole == null) this.adminRole = model.getAdminRole();
                 if (this.userIdentifier == null) this.userIdentifier = model.getUserIdentifier();
+                if (this.authenticationFlow == null) this.authenticationFlow = model.getAuthenticationFlow();
                 this.initialized = true;
             } catch (IOException | NullPointerException e) {
                 LoggerFactory.getLogger(OidcAuthConfig.class).error("Error while trying to load default configuration : {}", e.getMessage());
@@ -121,6 +137,14 @@ public class OidcAuthConfig {
         this.clientSecret = clientSecret;
     }
 
+    public String getAuthenticationFlow() {
+        return authenticationFlow;
+    }
+
+    public void setAuthenticationFlow(String authenticationFlow) {
+        this.authenticationFlow = authenticationFlow;
+    }
+
     public Boolean getEnabled() {
         return enabled;
     }
@@ -137,9 +161,28 @@ public class OidcAuthConfig {
                 ", adminRole='" + adminRole + '\'' +
                 ", clientId='" + clientId + '\'' +
                 ", clientSecret='" + clientSecret + '\'' +
+                ", authenticationFlow='" + authenticationFlow + '\'' +
                 ", enabled=" + enabled +
                 ", initialized=" + initialized +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        OidcAuthConfig that = (OidcAuthConfig) o;
+        return Objects.equals(providerUrl, that.providerUrl) &&
+                Objects.equals(userIdentifier, that.userIdentifier) &&
+                Objects.equals(adminRole, that.adminRole) &&
+                Objects.equals(clientId, that.clientId) &&
+                Objects.equals(clientSecret, that.clientSecret) &&
+                Objects.equals(authenticationFlow, that.authenticationFlow);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(providerUrl, userIdentifier, adminRole, clientId, clientSecret, authenticationFlow);
     }
 }
 

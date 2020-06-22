@@ -47,7 +47,7 @@ public class OidcHttpHandler {
      * @return
      * @throws IOException
      */
-    public static String handleTokenRequest(String code, OidcProviderConfig oidcProviderConfig, OidcAuthConfig authConfig, ScmConfiguration scmConfig) throws IOException {
+    public static OidcTokenResponseModel handleTokenRequest(String code, OidcProviderConfig oidcProviderConfig, OidcAuthConfig authConfig, ScmConfiguration scmConfig) throws IOException {
         logger.debug("Started preparing access token request...");
         String resStr = OidcAuthUtils.sendTokenRequest(oidcProviderConfig, authConfig, scmConfig, code);
         logger.debug("Request completed with JSON response -> *************");
@@ -56,10 +56,12 @@ public class OidcHttpHandler {
         logger.debug("JSON response parsed. Extracted values:");
         String access_token = model == null ? "" : model.getAccessToken();
         logger.debug("access_token -> ************");
-        if (access_token.equals("")) {
-            return null;
+        String refresh_token = model == null ? "" : model.getRefreshToken();
+        logger.debug("refresh_token -> ************");
+        if (access_token.equals("") || refresh_token.equals("")) {
+            return new OidcTokenResponseModel();
         }
-        return access_token;
+        return model;
     }
 
     /**
@@ -72,7 +74,7 @@ public class OidcHttpHandler {
      * @return
      * @throws IOException
      */
-    public static String handlePasswordTokenRequest(OidcProviderConfig providerConfig, OidcAuthConfig authConfig, String username, String password) throws IOException {
+    public static OidcTokenResponseModel handlePasswordTokenRequest(OidcProviderConfig providerConfig, OidcAuthConfig authConfig, String username, String password) throws IOException {
         logger.debug("Started preparing password access token request...");
         String resStr = OidcAuthUtils.sendPasswordTokenRequest(providerConfig, authConfig, username, password);
         logger.debug("Request completed with JSON response -> *************");
@@ -81,10 +83,38 @@ public class OidcHttpHandler {
         logger.debug("JSON response parsed. Extracted values:");
         String access_token = model == null ? "" : model.getAccessToken();
         logger.debug("access_token -> ************");
-        if (access_token.equals("")) {
-            return null;
+        String refresh_token = model == null ? "" : model.getRefreshToken();
+        logger.debug("refresh_token -> ************");
+        if (access_token.equals("") || refresh_token.equals("")) {
+            return new OidcTokenResponseModel();
         }
-        return access_token;
+        return model;
+    }
+
+    /**
+     * Sends a request to the token endpoint using refresh_token and handles the response by returning the access token from the provider.
+     *
+     * @param providerConfig
+     * @param authConfig
+     * @param given_refresh_token
+     * @return
+     * @throws IOException
+     */
+    public static OidcTokenResponseModel handleRefreshTokenRequest(OidcProviderConfig providerConfig, OidcAuthConfig authConfig, String given_refresh_token) throws IOException {
+        logger.debug("Started preparing refresh token request...");
+        String resStr = OidcAuthUtils.sendRefreshTokenRequest(providerConfig, authConfig, given_refresh_token);
+        logger.debug("Request completed with JSON response -> *************");
+
+        OidcTokenResponseModel model = OidcAuthUtils.parseJSON(resStr, OidcTokenResponseModel.class);
+        logger.debug("JSON response parsed. Extracted values:");
+        String access_token = model == null ? "" : model.getAccessToken();
+        logger.debug("access_token -> ************");
+        String refresh_token = model == null ? "" : model.getRefreshToken();
+        logger.debug("refresh_token -> ************");
+        if (access_token.equals("") || refresh_token.equals("")) {
+            return new OidcTokenResponseModel();
+        }
+        return model;
     }
 
 }

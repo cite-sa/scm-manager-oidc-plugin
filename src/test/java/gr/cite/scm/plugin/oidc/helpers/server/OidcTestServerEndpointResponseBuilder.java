@@ -21,11 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  * SOFTWARE.
  */
-package gr.cite.scm.plugin.oidc.server;
+package gr.cite.scm.plugin.oidc.helpers.server;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import gr.cite.scm.plugin.oidc.token.OidcTestToken;
+import gr.cite.scm.plugin.oidc.helpers.jwt.OidcTestToken;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -51,6 +51,7 @@ public class OidcTestServerEndpointResponseBuilder {
         ObjectMapper mapper = new ObjectMapper();
         Map<String, Object> token = new HashMap<>();
         token.put("access_token", testToken.getX5c());
+        token.put("refresh_token", "refresh_token");
         return mapper.writeValueAsString(token);
     }
 

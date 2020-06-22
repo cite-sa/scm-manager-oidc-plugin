@@ -26,7 +26,9 @@ package gr.cite.scm.plugin.oidc;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
+import gr.cite.scm.plugin.oidc.token.OidcClientTokenIssuer;
 import org.apache.shiro.mgt.SecurityManager;
+import org.apache.shiro.subject.PrincipalCollection;
 import org.apache.shiro.subject.Subject;
 import org.apache.shiro.util.ThreadContext;
 import org.junit.After;
@@ -54,7 +56,11 @@ public class OidcLogoutTest {
     @Mock
     private SecurityManager securityManager;
     @Mock
+    private OidcClientTokenIssuer clientTokenIssuer;
+    @Mock
     private Subject subject;
+    @Mock
+    private PrincipalCollection principalCollection;
 
     @InjectMocks
     private OidcLogoutResource oidcLogoutResource;
@@ -63,6 +69,8 @@ public class OidcLogoutTest {
     public void setup() {
         MockitoAnnotations.initMocks(this);
         when(subject.isAuthenticated()).thenReturn(true);
+        when(subject.getPrincipals()).thenReturn(principalCollection);
+        when(principalCollection.getPrimaryPrincipal()).thenReturn("subject");
         ThreadContext.bind(subject);
         ThreadContext.bind(securityManager);
         when(oidcAuthConfig.getEnabled()).thenReturn(true);

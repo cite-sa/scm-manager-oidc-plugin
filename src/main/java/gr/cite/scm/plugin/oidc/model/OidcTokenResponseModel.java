@@ -29,14 +29,14 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 public class OidcTokenResponseModel {
 
     private String access_token;
+    private String refresh_token;
 
     public String getAccessToken() {
-        if (access_token == null) throw new NullPointerException();
         return access_token;
     }
 
-    public void setAccessToken(String access_token) {
-        this.access_token = access_token;
+    public String getRefreshToken() {
+        return refresh_token;
     }
 
     public String getAccess_token() {
@@ -45,5 +45,13 @@ public class OidcTokenResponseModel {
 
     public void setAccess_token(String access_token) {
         this.access_token = access_token;
+    }
+
+    public String getRefresh_token() {
+        return refresh_token;
+    }
+
+    public void setRefresh_token(String refresh_token) {
+        this.refresh_token = refresh_token;
     }
 }

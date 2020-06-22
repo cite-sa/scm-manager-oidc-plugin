@@ -23,9 +23,12 @@
  */
 package gr.cite.scm.plugin.oidc;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.servlet.SessionScoped;
+import gr.cite.scm.plugin.oidc.model.OidcTokenResponseModel;
+import gr.cite.scm.plugin.oidc.token.OidcClientTokenIssuer;
+import gr.cite.scm.plugin.oidc.token.OidcClientTokensStore;
 import org.apache.shiro.SecurityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,12 +38,16 @@ import sonia.scm.plugin.ext.Extension;
 import sonia.scm.store.Store;
 import sonia.scm.store.StoreFactory;
 import sonia.scm.user.User;
+import sonia.scm.user.UserManager;
 import sonia.scm.web.security.AuthenticationHandler;
 import sonia.scm.web.security.AuthenticationResult;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Calendar;
+import java.util.Map;
+import java.util.TimeZone;
 
 /**
  * Returns the final AuthenticationResult back to AutoLoginModule
@@ -59,12 +66,18 @@ public class OidcAuthenticationHandler implements AuthenticationHandler {
 
     private ScmConfiguration scmConfig;
 
+    private OidcClientTokenIssuer clientTokenIssuer;
+
+    private UserManager userManager;
+
     private static Logger logger = LoggerFactory.getLogger(OidcAuthenticationHandler.class);
 
     @Inject
-    public OidcAuthenticationHandler(StoreFactory storeFactory, ScmConfiguration scmConfig) {
+    public OidcAuthenticationHandler(StoreFactory storeFactory, ScmConfiguration scmConfig, OidcClientTokenIssuer clientTokenIssuer, UserManager userManager) {
         store = storeFactory.getStore(OidcAuthConfig.class, STORE_NAME);
         this.scmConfig = scmConfig;
+        this.clientTokenIssuer = clientTokenIssuer;
+        this.userManager = userManager;
     }
 
     /**
@@ -79,22 +92,97 @@ public class OidcAuthenticationHandler implements AuthenticationHandler {
     @Override
     public AuthenticationResult authenticate(HttpServletRequest request, HttpServletResponse response, String username, String password) {
         if (config.getEnabled()) {
-            if (OidcAuthUtils.isBrowser(request)) {
-                return result(request, username);
-            } else {
+            if (!OidcAuthUtils.isBrowser(request)) {
                 try {
                     logger.trace("Request authenticated attribute : {}", request.getAttribute("authenticated"));
-                    if (request.getAttribute("authenticated") == null) {
-                        OidcAuthenticationFilter.doAuthenticate(request, response, SecurityUtils.getSubject(), OidcAuthenticationFilter.oidcProviderConfigStatic, scmConfig, getConfig(), username, password);
+                    if (OidcAuthConfig.AuthenticationFlow.IDENTIFICATION_TOKEN.equals(config.getAuthenticationFlow())) {
+                        logger.debug("Using Client Identification Token authentication flow...");
+                        User subject = checkClientTokenPassword(username, password);
+                        if (subject != null) {
+                            logger.debug("Identification token authentication succeeded.");
+                            return new AuthenticationResult(subject);
+                        } else {
+                            logger.debug("Identification token authentication failed.");
+                            return AuthenticationResult.NOT_FOUND;
+                        }
+                    } else {
+                        if (request.getAttribute("authenticated") == null) {
+                            logger.debug("Using Resource Owner Grant authentication flow...");
+                            OidcAuthenticationFilter.doAuthenticate(request, response, SecurityUtils.getSubject(), OidcAuthenticationFilter.oidcProviderConfigStatic, scmConfig, getConfig(), null, username, password);
+                        }
                     }
-                } catch (IOException e) {
+                } catch (Exception e) {
+                    logger.error("Identification token authentication failed. {}", e.getMessage());
                     return AuthenticationResult.FAILED;
                 }
-                return result(request, username);
             }
+            return result(request, username);
         }
         logger.info("User " + username + " did not get authenticated by oidc plugin");
         return AuthenticationResult.NOT_FOUND;
+    }
+
+    private User checkClientTokenPassword(String username, String password) {
+        logger.debug("Checking if the given password corresponds to an active issued identification token...");
+        String subject = clientTokenIssuer.getUserByToken(password);
+        if (subject != null) {
+            logger.debug("The given password corresponds to user -> {}", subject);
+            if (!subject.equals(username)) {
+                logger.debug("The username does not match the token's owner. Terminating authentication process...");
+                return null;
+            }
+            OidcClientTokensStore.ProviderToken providerTokens = clientTokenIssuer.getProviderTokens(subject);
+            if (providerTokens != null) {
+                logger.debug("User has provider tokens stored... Checking the tokens...");
+                long accessTokenExpiresAt = providerTokens.getAccessTokenExpiresAt();
+                DecodedJWT decodedRefreshToken = OidcAuthUtils.decodeJWT(providerTokens.getRefreshToken());
+                if (accessTokenExpiresAt > System.currentTimeMillis()) {
+                    logger.debug("Access token has not expired. User is logged in.");
+                    return getClientUser(decodedRefreshToken, subject);
+                } else {
+                    if (decodedRefreshToken.getExpiresAt().compareTo(Calendar.getInstance(TimeZone.getTimeZone("UTC")).getTime()) > 0) {
+                        logger.debug("Access token has expired. Trying to retrieve a new one from the provider using the refresh token...");
+                        try {
+                            OidcTokenResponseModel responseModel = OidcHttpHandler.handleRefreshTokenRequest(OidcAuthenticationFilter.oidcProviderConfigStatic, config, providerTokens.getRefreshToken());
+                            if (responseModel.getAccessToken() == null || responseModel.getRefreshToken() == null) {
+                                logger.debug("Could not retrieve new access token. Terminating authentication process...");
+                            } else {
+                                logger.debug("Access token retrieved from provider using the stored refresh token");
+                                logger.debug("Starting access token signature validation...");
+                                if (OidcAuthUtils.verifyJWT(OidcAuthUtils.decodeJWT(responseModel.getAccessToken()), OidcAuthenticationFilter.oidcProviderConfigStatic.getJwksUri())) {
+                                    clientTokenIssuer.saveProviderTokens(responseModel.getAccessToken(), responseModel.getRefreshToken(), subject);
+                                    return getClientUser(decodedRefreshToken, subject);
+                                } else {
+                                    logger.debug("Could not validate new access token. Terminating authentication process...");
+                                }
+                            }
+                        } catch (IOException e) {
+                            logger.error("Could not retrieve or validate new access token. Terminating authentication process...");
+                        }
+                    } else {
+                        logger.debug("Access token has expired. Refresh token has also expired. Cannot retrieve a new access token. User is logged out.");
+                        clientTokenIssuer.removeProviderTokens(subject);
+                    }
+                }
+            } else {
+                logger.debug("There are no provider tokens stored for the user. Terminating authentication process...");
+            }
+        } else {
+            logger.debug("The given password does not correspond to a user. Terminating authentication process...");
+        }
+        return null;
+    }
+
+    private User getClientUser(DecodedJWT token, String subject) {
+        Map<String, String> user_attributes = OidcAuthUtils.getUserAttributesFromToken(config, token);
+        User user = userManager.get(subject);
+        String role = user_attributes.get("role");
+        if (role != null && role.contains(config.getAdminRole())) {
+            user.setAdmin(true);
+        } else {
+            user.setAdmin(false);
+        }
+        return user;
     }
 
     @Override
@@ -149,6 +237,13 @@ public class OidcAuthenticationHandler implements AuthenticationHandler {
      * @param config
      */
     public void setConfig(OidcAuthConfig config) {
+        if (!config.getEnabled()) {
+            logger.debug("Plugin got disabled... Clearing all sensitive information from store...");
+            clientTokenIssuer.resetTokenStore();
+        } else if (!config.getAuthenticationFlow().equals(this.config.getAuthenticationFlow()) && OidcAuthConfig.AuthenticationFlow.IDENTIFICATION_TOKEN.equals(this.config.getAuthenticationFlow())) {
+            logger.debug("Authentication flow changed to '{}'... Clearing all sensitive information from store...", OidcAuthConfig.AuthenticationFlow.RESOURCE_OWNER);
+            clientTokenIssuer.resetTokenStore();
+        }
         this.config = config;
     }
 

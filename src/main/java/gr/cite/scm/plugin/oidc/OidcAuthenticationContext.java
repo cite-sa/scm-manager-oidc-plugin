@@ -75,9 +75,9 @@ public class OidcAuthenticationContext {
                 String email = attributes.get("email");
                 String subject_id = attributes.get("sub");
 
-                boolean usesEmailIdentifier = "Email".equals(config.getUserIdentifier());
-                boolean usesUsernameIdentifier = "Username".equals(config.getUserIdentifier());
-                boolean usesSubjectIdIdentifier = "SubjectID".equals(config.getUserIdentifier());
+                boolean usesEmailIdentifier = OidcAuthConfig.UserIdentifier.EMAIL.equals(config.getUserIdentifier());
+                boolean usesUsernameIdentifier = OidcAuthConfig.UserIdentifier.USERNAME.equals(config.getUserIdentifier());
+                boolean usesSubjectIdIdentifier = OidcAuthConfig.UserIdentifier.SUBJECT_ID.equals(config.getUserIdentifier());
 
                 boolean isUsernameDefined = username != null && !username.trim().isEmpty();
                 boolean isDisplayNameDefined = display_name != null && !display_name.trim().isEmpty();
